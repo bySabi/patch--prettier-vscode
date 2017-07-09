@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+set -e
+
+Version=0.21.0
+
+main() {
+  check_brew_pkg 'jq'
+  check_brew_pkg 'sponge'
+  check_npm_pkg 'vsce'
+  check_npm_pkg 'npmclean'
+
+  case "$1" in
+    setup)
+      setup
+      ;;
+    std)
+      setup
+      patch_package_json_standard
+      patch_readme_standard
+      patch_src "prettier-std"
+      ;;
+    semi)
+      setup
+      patch_package_json_semistandard
+      patch_readme_semistandard
+      patch_src "prettier-semi"
+      ;;
+    package)
+      cd prettier-vscode
+      if is_patched; then
+        package
+      else
+        printf "${RED}Error:${NC} 'prettier-vscode' is not patched \n Run first: ${GREEN}./patch semi${NC} or ${GREEN}./patch std${NC}\n"
+      fi
+      ;;
+    publish)
+      cd prettier-vscode
+      if is_patched; then
+        publish
+      else
+        printf "${RED}Error:${NC} 'prettier-vscode' is not patched \n Run first: ${GREEN}./patch semi${NC} or ${GREEN}./patch std${NC}\n"
+      fi
+      ;;
+    *)
+      echo "Usage: ./patch COMMAND"
+      echo "Easy patch prettier-vscode extension"
+      echo
+      echo "Version: ${Version}"
+      echo
+      echo  "Commands"
+      echo  " std      Patch for \"standard\""
+      echo  " semi     Patch for \"semistandard\""
+      echo  " publish  Publish extension"
+      echo  " package  Generate VSIX extension"
+      echo
+      echo
+      exit 1
+      ;;
+  esac
+}
+
+function setup() {
+  ## clone prettier-vscode
+  clone_or_pull https://github.com/esbenp/prettier-vscode.git prettier-vscode
+
+  ## set working dir
+  cd prettier-vscode
+
+  ## clean module repository
+  npmclean
+  rm -fr .vscode out ./*.vsix
+  printf "${GREEN}sucess${NC} clean module repository\n"
+}
+
+function package() {
+  npm i
+  vsce package
+  printf "${GREEN}sucess${NC} creating VSIX extension\n"
+}
+
+function publish() {
+  npm i
+  vsce publish
+  printf "${GREEN}sucess${NC} publishing extension\n"
+}
+
+function patch_package_json_standard() {
+  local name="prettier-vscode-standard"
+  local description="VS Code plugin for prettier OR prettier + standard --fix"
+  local publisher="bysabi"
+  local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
+  local pkg="prettier-std"
+  local pkg_version
+  pkg_version=$(npm show ${pkg} version)
+  cat package.json | jq \
+   --arg name "${name}" \
+   --arg description "${description}" \
+   --arg publisher "${publisher}" \
+   --arg homepage "${homepage}" \
+   --arg pkg_version "${pkg_version}" \
+  ' .name = $name |
+    .description = $description |
+    .publisher = $publisher |
+    .homepage = $homepage |
+    .dependencies."prettier-std" = $pkg_version
+  ' > package.json.patched
+  mv -f package.json.patched package.json
+  printf "${GREEN}sucess${NC} patchig package.json\n"
+}
+
+function patch_package_json_semistandard() {
+  local name="prettier-vscode-semistandard"
+  local description="VS Code plugin for prettier OR prettier + semistandard --fix"
+  local publisher="bysabi"
+  local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
+  local pkg="prettier-semi"
+  local pkg_version
+  pkg_version=$(npm show ${pkg} version)
+  cat package.json | jq \
+   --arg name "${name}" \
+   --arg description "${description}" \
+   --arg publisher "${publisher}" \
+   --arg homepage "${homepage}" \
+   --arg pkg_version "${pkg_version}" \
+  ' .name = $name |
+    .description = $description |
+    .publisher = $publisher |
+    .homepage = $homepage |
+    .dependencies."prettier-semi" = $pkg_version
+  ' > package.json.patched
+  mv -f package.json.patched package.json
+  printf "${GREEN}sucess${NC} patchig package.json\n"
+}
+
+function patch_src() {
+  local pkg=${1}
+  sed -i -e "s/require('prettier-eslint')/require('${1}')/g" src/PrettierEditProvider.ts
+  printf "${GREEN}sucess${NC} patchig src/PrettierEditProvider.ts\n"
+}
+
+function patch_readme_standard() {
+  cat <<"__header__" | cat - README.md | sponge README.md
+> **forked** extension for use [Standard][standard] integrate to *prettier-eslint*
+
+[standard]: https://github.com/standard/standard/
+
+__header__
+
+  sed -i -e "s/ext install prettier-vscode/ext install prettier-vscode-standard/g" README.md
+  sed -i -e "s/itemName=esbenp.prettier-vscode/itemName=bysabi.prettier-vscode-standard/g" README.md
+
+  printf "${GREEN}sucess${NC} patchig README.md\n"
+}
+
+function patch_readme_semistandard() {
+  cat <<"__header__" | cat - README.md | sponge README.md
+> **forked** extension for use [Semistandard][semistandard] integrate to *prettier-eslint*
+
+[semistandard]: https://github.com/Flet/semistandard
+
+__header__
+
+  sed -i -e "s/ext install prettier-vscode/ext install prettier-vscode-semistandard/g" README.md
+  sed -i -e "s/itemName=esbenp.prettier-vscode/itemName=bysabi.prettier-vscode-semistandard/g" README.md
+
+  printf "${GREEN}sucess${NC} patchig README.md\n"
+}
+
+# check is package.json is patched
+function is_patched() {
+  local publisher
+  publisher=$(cat package.json | jq '.publisher')
+  if [ $publisher == '"bysabi"' ]; then
+    true
+  else
+    false
+  fi
+}
+
+
+## check for brew packages
+function check_brew_pkg() {
+  if ! which "$1" > /dev/null
+    then
+      printf "${RED}Error:${NC} \"${1}\" tool needed.\nInstall with: \n  ${GREEN}brew install ${1}${NC}\n"
+      exit 1
+  fi
+}
+
+## check for npm packages
+function check_npm_pkg() {
+  if ! which "$1" > /dev/null
+    then
+      printf "${RED}Error:${NC} \"${1}\" tool needed.\nInstall with: \n  ${GREEN}npm i ${1} -g${NC}\n"
+      exit 1
+  fi
+}
+
+## clone or pull a git repo
+function clone_or_pull() {
+  local repo_src=${1}
+  local local_repo=${2}
+  local current
+  current=$(pwd)
+  if [ ! -d "${local_repo}/.git" ]; then
+    git clone "${repo_src}" "${local_repo}"
+    printf "${GREEN}sucess${NC} cloned ${1}\n"
+  else
+    cd "${local_repo}"
+    ##git stash
+    git reset --hard
+    git pull "${repo_src}"
+    printf "${GREEN}sucess${NC} updated ${1}\n"
+    cd "${current}"
+  fi
+}
+
+
+# Misc
+## define some colors to use for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+main "${@}"
+exit 0
