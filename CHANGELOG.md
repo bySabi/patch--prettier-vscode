@@ -1,4 +1,6 @@
 ## master (unreleased)
+### patch **package.json**
+  - change *.description*
 
 ## 0.21.0
 ### patch **package.json**
