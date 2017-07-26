@@ -86,7 +86,7 @@ function publish() {
 
 function patch_package_json_standard() {
   local name="prettier-vscode-standard"
-  local description="prettier OR prettier + standard --fix"
+  local description="prettier or prettier + standard --fix"
   local publisher="bysabi"
   local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
   local pkg="prettier-std"
@@ -110,7 +110,7 @@ function patch_package_json_standard() {
 
 function patch_package_json_semistandard() {
   local name="prettier-vscode-semistandard"
-  local description="prettier OR prettier + semistandard --fix"
+  local description="prettier or prettier + semistandard --fix"
   local publisher="bysabi"
   local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
   local pkg="prettier-semi"

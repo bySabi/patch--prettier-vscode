@@ -1,6 +1,9 @@
 ## master (unreleased)
+
+## 0.22.0
 ### patch **package.json**
   - change *.description*
+  - update to latest extension src
 
 ## 0.21.0
 ### patch **package.json**
