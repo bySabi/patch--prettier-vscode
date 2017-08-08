@@ -1,5 +1,12 @@
 ## master (unreleased)
 
+## 0.22.1
+### patch **package.json**
+  - change *.repository.url*
+  - change *.bugs.url*
+
+### update to latest extension *src*
+
 ## 0.22.0
 ### patch **package.json**
   - change *.description*

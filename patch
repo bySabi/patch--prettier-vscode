@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-Version=0.2.0
+Version=0.2.1
 
 main() {
   check_brew_pkg 'jq'
@@ -89,6 +89,8 @@ function patch_package_json_standard() {
   local description="prettier or prettier + standard --fix"
   local publisher="bysabi"
   local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
+  local repository="https://github.com/bySabi/patch--prettier-vscode.git"
+  local bugs="https://github.com/bySabi/patch--prettier-vscode/issues"
   local pkg="prettier-std"
   local pkg_version
   pkg_version=$(npm show ${pkg} version)
@@ -97,11 +99,15 @@ function patch_package_json_standard() {
    --arg description "${description}" \
    --arg publisher "${publisher}" \
    --arg homepage "${homepage}" \
+   --arg repository "${repository}" \
+   --arg bugs "${bugs}" \
    --arg pkg_version "${pkg_version}" \
   ' .name = $name |
     .description = $description |
     .publisher = $publisher |
     .homepage = $homepage |
+    .repository."url" = $repository |
+    .bugs."url" = $bugs |
     .dependencies."prettier-std" = $pkg_version
   ' > package.json.patched
   mv -f package.json.patched package.json
@@ -113,6 +119,8 @@ function patch_package_json_semistandard() {
   local description="prettier or prettier + semistandard --fix"
   local publisher="bysabi"
   local homepage="https://marketplace.visualstudio.com/items?itemName=${publisher}.${name}"
+  local repository="https://github.com/bySabi/patch--prettier-vscode.git"
+  local bugs="https://github.com/bySabi/patch--prettier-vscode/issues"
   local pkg="prettier-semi"
   local pkg_version
   pkg_version=$(npm show ${pkg} version)
@@ -121,11 +129,15 @@ function patch_package_json_semistandard() {
    --arg description "${description}" \
    --arg publisher "${publisher}" \
    --arg homepage "${homepage}" \
+   --arg repository "${repository}" \
+   --arg bugs "${bugs}" \
    --arg pkg_version "${pkg_version}" \
   ' .name = $name |
     .description = $description |
     .publisher = $publisher |
     .homepage = $homepage |
+    .repository."url" = $repository |
+    .bugs."url" = $bugs |
     .dependencies."prettier-semi" = $pkg_version
   ' > package.json.patched
   mv -f package.json.patched package.json
